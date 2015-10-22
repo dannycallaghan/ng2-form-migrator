@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+		<head>
+			<title>Form Migrator</title>
+			<link rel="stylesheet" href="../node_modules/bootstrap/dist/css/bootstrap.css">
+			<script src="../node_modules/systemjs/dist/system.src.js"></script>
+			<script src="../node_modules/angular2/bundles/angular2.dev.js"></script>
+			<script>
+				System.config({
+					packages: {
+						'app': {
+							defaultExtension: 'js'
+						}
+					}	
+				});
+				System.import('app/app');
+			</script>	
+		</head>
+		<body>
+			<form-migrator>loading...</form-migrator>
+		</body>
+</html>

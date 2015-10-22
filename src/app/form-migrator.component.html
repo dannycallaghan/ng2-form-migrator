@@ -1,0 +1,29 @@
+<div class="container">
+	<div class="page-header">
+		<h1>tillr Form Migrator <small>powered by Angular 2</small></h1>
+	</div>
+	<div class="alert alert-info">
+		<ol>
+			<li>Copy and paste the <strong>old</strong> form JSON into Box 1.</li>
+			<li>Hit 'Convert'.</li>
+			<li>Copy the output from Box 2.</li>
+		</ol>
+	</div>
+	<div *ng-if="error" class="alert alert-danger">
+		<p>Oops, there's been an error. Are you sure the old form data is correct?</p>
+	</div>
+	<div class="row">
+		<ng-form>
+			<div class="col-xs-12 col-sm-5">
+				<textarea [(ng-model)]="form.oldData" class="form-control" placeholder="Box 1"></textarea>
+			</div>
+			<div class="col-xs-12 col-sm-2">
+				<button [disabled]="!form.oldData.length" [class.btn-danger]="converting" [class.btn-primary]="!converting"(click)="convert()" class="btn btn-lg btn-block">Convert <i class="glyphicon glyphicon-random"></i></button>
+				<loader *ng-if="converting"></loader>
+			</div>
+			<div class="col-xs-12 col-sm-5">
+				<textarea [(ng-model)]="form.newData" class="form-control" placeholder="Box 1"></textarea>
+			</div>
+		</ng-form>
+	</div>
+</div>
