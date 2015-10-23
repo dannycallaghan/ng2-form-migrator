@@ -22,6 +22,7 @@
 				<loader *ng-if="converting"></loader>
 			</div>
 			<div class="col-xs-12 col-sm-5">
+				<pre>{{form.newData | json}}</pre>
 				<textarea [(ng-model)]="form.newData" class="form-control" placeholder="Box 1"></textarea>
 			</div>
 		</ng-form>
