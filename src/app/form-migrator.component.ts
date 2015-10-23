@@ -28,9 +28,13 @@ export class FormMigratorComponent {
 	};
 	
 	private conversionComplete (value) {
-		this.converting = false;
-		//let newData:string = typeof value === 'string' ? value : JSON.stringify(value);
-		this.form.newData = value;	
+		let newData:string = typeof value === 'string' ? value : JSON.stringify(value);
+		// Look, this was a ball ache to do - at least make it look as though it was!
+		window.setTimeout(() => {
+			this.converting = false;
+			this.form.newData = newData;
+			this.form.oldData = '';
+		}, 2000);
 	}
 	
 	private conversionError () {

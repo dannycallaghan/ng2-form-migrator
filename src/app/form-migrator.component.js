@@ -33,9 +33,14 @@ var FormMigratorComponent = (function () {
     };
     ;
     FormMigratorComponent.prototype.conversionComplete = function (value) {
-        this.converting = false;
-        //let newData:string = typeof value === 'string' ? value : JSON.stringify(value);
-        this.form.newData = value;
+        var _this = this;
+        var newData = typeof value === 'string' ? value : JSON.stringify(value);
+        // Look, this was a ball ache to do - at least make it look as though it was!
+        window.setTimeout(function () {
+            _this.converting = false;
+            _this.form.newData = newData;
+            _this.form.oldData = '';
+        }, 2000);
     };
     FormMigratorComponent.prototype.conversionError = function () {
         this.error = true;

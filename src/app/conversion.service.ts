@@ -13,12 +13,21 @@ export class ConversionService {
 				return this.setTemplate(data).then(data => {
 					return this.changeQuotes(data).then(data => {
 						return this.convertToJson(data).then(data => {
-							//return this.sortFields(data).then(data => {
-								return this.convertToFormly(data).then(data => {
-									console.info(typeof data);
-									return Promise.resolve(data);
+							return this.sortFieldCols(data).then(data => {
+								return this.sortFieldRows(data).then(data => {
+									return this.convertFieldsToFormly(data).then(data => {
+										return this.changeDetailsToSettings(data).then(data => {
+											return this.convertToString(data).then(data => {
+												return this.editAuxData().then(() => {
+													return this.returnResult().then((data) => {
+														return Promise.resolve(data);
+													});
+												});
+											})
+										});
+									});
 								});
-							//});
+							});
 						});
 					});
 				});
@@ -26,52 +35,124 @@ export class ConversionService {
 		});
 		
 	};
+	
+	private returnResult (): Promise<data> {
+		let result:Object = {};
+		result = this.auxData;
+		result.Template = this.template;
+		return Promise.resolve(result); 
+	}
+	
+	private editAuxData (): Promise<data> {
+		let result:Object = {};
+		result = {
+			Name: this.auxData.Name,
+			CreatedDate: this.auxData.CreatedDate,
+			CreatedBy: this.auxData.CreatedBy,
+			AllowedTenantIds: this.auxData.AllowedTenantIds,
+			IsActive: true,
+			OldVersionIds: []
+		};
+		this.auxData = result;
+		return Promise.resolve();	
+	}
+	
+	private convertToString (data): Promise<data> {
+		let newString:string;
+		newString = JSON.stringify(data);
+		this.template = newString;
+		return Promise.resolve();
+	}
+	
+	private changeDetailsToSettings (data): Promise<data> {
+		let settings:Object = {};
+		settings = {
+			displaySteps: false,
+			create: {
+				save: data.details.lock,
+				cancel: data.details.cancel,
+				submit: data.details.submit,
+				success: data.details.success,
+				error: data.details.error,
+				submitSuccess: data.details.submitSuccess,
+				submitError: data.details.submitError
+			},
+			manage: {
+				save: 'Save',
+				cancel: 'Cancel',
+				submit: 'Submit',
+				success: 'Thank you. Your form has been saved.',
+				error: 'Sorry, we could not save your form.',
+				submitSuccess: 'Thank you. Your form has been submitted.',
+				submitError: 'Sorry, we could not submit your form.'
+			},
+			canSubmit: data.details.canLock,
+			sameMessages: true,
+			sameButtons: true
+		};
+		data.settings = settings;
+		delete data.details;
+		return Promise.resolve(data);
+	}
+	
+	private getTypeTemplate (obj) {
+		let newObj:Object = {
+			data: {
+				format: 'element'
+			},
+			key: obj.guid,
+			className: 'formly-builder-element col-xs-12 col-sm-12',
+			templateOptions: {
+    			label: obj.label || '',
+				required: obj.required || false,
+    			valueProp: 'name',
+				placeholder: obj.placeholder || '',
+				options: []
+    		}
+		};
+		if (obj.sizeX === 1) {
+			if (obj.col === 0) {
+				newObj.data.align = 'left';	
+				newObj.className = 'formly-builder-element col-xs-6 clear';
+			} else if (obj.col === 1) {
+				newObj.data.align = 'right';
+				newObj.className = 'formly-builder-element col-xs-6 pull-right';
+			}
+		}
+		return newObj;
+	}
 
 	private defaultType (obj) {
-		// TODO - Check if setting certain properties to a falsey value
-    	// is OK or should the properties not exist?
+		let newObj:Object = this.getTypeTemplate(obj);
 
-    	let newObj:Object = {};
-
-    	newObj.type = obj.type || 'input'
-    	newObj.data = {
-    		format: 'element'
-    	};
-    	newObj.templateOptions = {
-    		label: obj.label || '',
-    		options: obj.options || [],
-    		required: obj.required || false,
-    		valueProp: 'name'
-    	}
-    	newObj.key = obj.guid;
-    	newObj.defaultValue = obj.value || ''; // TODO - Check
-    	newObj.className = 'formly-builder-element col-xs-12 col-sm-12' // TODO
-  		
+		newObj.type = obj.type === 'text' ? 'input' : obj.type;
+    	
+    	if (obj.type === 'datepicker') {
+			newObj.defaultValue = obj.value || null;	
+		} else if (obj.type === 'timepicker'){
+			if (obj.value) {
+				newObj.defaultValue = obj.value;	
+			}
+		} else if (obj.type !== 'hr'){
+			newObj.defaultValue = obj.value || '';
+		}
+		
   		return newObj;
     }
 
     private selectType (obj) {
-    	// TODO - Check if setting certain properties to a falsey value
-    	// is OK or should the properties not exist?
-
-    	let newObj:Object = {};
+    	let newObj:Object = this.getTypeTemplate(obj);
 
     	newObj.type = 'tlrSelect';
-    	newObj.data = {
-    		format: 'element',
-    		prompt: 'Select' // TODO - Check
-    	};
-    	newObj.templateOptions = {
-    		label: obj.label || '',
-    		required: obj.required || false,
-    		valueProp: 'name',
-    		options: []
-    	}
-    	newObj.key = obj.guid;
-    	newObj.defaultValue = obj.value || ''; // TODO - Check
-    	newObj.className = 'formly-builder-element col-xs-12 col-sm-12' // TODO
-
-    	obj.options.forEach((item) => {
+    	newObj.data.prompt = obj.prompt;
+    	
+		if (obj.value && obj.value !== 'null') {
+			newObj.defaultValue = obj.options[parseInt(obj.value, 10) - 1].option;
+		} else {
+			newObj.defaultValue = null;
+		}
+		
+		obj.options.forEach((item) => {
     		let option:Object = {
     			name: item.option 
     		};
@@ -82,36 +163,48 @@ export class ConversionService {
     }
 
     private radioType (obj) {
-		// TODO - Check if setting certain properties to a falsey value
-    	// is OK or should the properties not exist?
+		let newObj:Object = this.getTypeTemplate(obj);
 
-    	let newObj:Object = {};
-
-    	newObj.type = 'tlrSelect';
-    	newObj.data = {
-    		format: 'element',
-    		prompt: 'Select' // TODO - Check
-    	};
-    	newObj.templateOptions = {
-    		label: obj.label || '',
-    		required: obj.required || false,
-    		valueProp: 'name',
-    		options: []
-    	}
-    	newObj.key = obj.guid;
-    	newObj.defaultValue = obj.value || ''; // TODO - Check
-    	newObj.className = 'formly-builder-element col-xs-12 col-sm-12' // TODO
-
-    	obj.options.forEach((item) => {
+    	newObj.type = 'radio';
+    	newObj.defaultValue = obj.value.toString();
+    
+    	obj.options.forEach((item, index) => {
     		let option:Object = {
     			name: item.option,
-    			value: item.option.toString() 
+    			value: (index + 1).toString()
     		};
     		newObj.templateOptions.options.push(option);
     	});
   		
   		return newObj;	
     }
+	
+	private checkboxType (obj) {
+		let newObj:Object = this.getTypeTemplate(obj);
+
+    	newObj.type = obj.displayLabel && obj.displayLabel === true ? 'tlrMultiCheckbox' : 'checkbox';
+		
+		if (newObj.type === 'tlrMultiCheckbox') {
+			newObj.defaultValue = [];
+			obj.options.forEach((item) => {
+				let option:Object = {
+					name: item.label,
+				};
+				let values:Array = [];
+				newObj.templateOptions.options.push(option);
+				if (item.value && item.value === true) {
+					newObj.defaultValue.push(item.label); 	
+				}
+			});
+		} else {
+			if (obj.options[0].value) {
+				newObj.defaultValue = obj.options[0].value;
+			}
+		}
+	
+  		return newObj;	
+    }
+	
 
 	private toFormlyType (obj) {
 		let newObj:Object = {};
@@ -138,7 +231,7 @@ export class ConversionService {
 				newObj = this.defaultType(obj);
 			break;
 			case 'checkbox':
-				// TODO
+				newObj = this.checkboxType(obj);
 			break;
 			case 'select':
 				newObj = this.selectType(obj);
@@ -152,10 +245,15 @@ export class ConversionService {
 		return newObj;
 	}
 
-	private convertToFormly (data): Promise<data> {
+	private convertFieldsToFormly (data): Promise<data> {
 		let newFields:Array = [];
 		let newFieldsWrapper:Array = [{
-			fieldGroup: []
+			fieldGroup: [],
+			data: {
+          		format: 'step',
+          		label: 'Step'
+        	},
+        	className: 'formly-builder-step row'
 		}];
 		if (!data.fields) {
 			Promise.reject();	
@@ -166,8 +264,20 @@ export class ConversionService {
 		data.fields = newFieldsWrapper;
 		return Promise.resolve(data);
 	}
+	
+	private sortFieldCols (data): Promise<data> {
+		if (!data.fields) {
+			Promise.reject();	
+		}
+		data.fields.sort((a, b) => {
+			if (a.col < b.col) return -1;
+			if (a.col > b.col) return 1;
+			return 0;
+		});
+		return Promise.resolve(data);
+	}
 
-	private sortFields (data): Promise<data> {
+	private sortFieldRows (data): Promise<data> {
 		if (!data.fields) {
 			Promise.reject();	
 		}

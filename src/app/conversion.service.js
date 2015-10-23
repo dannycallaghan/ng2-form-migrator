@@ -20,12 +20,21 @@ var ConversionService = (function () {
                 return _this.setTemplate(data).then(function (data) {
                     return _this.changeQuotes(data).then(function (data) {
                         return _this.convertToJson(data).then(function (data) {
-                            //return this.sortFields(data).then(data => {
-                            return _this.convertToFormly(data).then(function (data) {
-                                console.info(typeof data);
-                                return Promise.resolve(data);
+                            return _this.sortFieldCols(data).then(function (data) {
+                                return _this.sortFieldRows(data).then(function (data) {
+                                    return _this.convertFieldsToFormly(data).then(function (data) {
+                                        return _this.changeDetailsToSettings(data).then(function (data) {
+                                            return _this.convertToString(data).then(function (data) {
+                                                return _this.editAuxData().then(function () {
+                                                    return _this.returnResult().then(function (data) {
+                                                        return Promise.resolve(data);
+                                                    });
+                                                });
+                                            });
+                                        });
+                                    });
+                                });
                             });
-                            //});
                         });
                     });
                 });
@@ -33,43 +42,114 @@ var ConversionService = (function () {
         });
     };
     ;
+    ConversionService.prototype.returnResult = function () {
+        var result = {};
+        result = this.auxData;
+        result.Template = this.template;
+        return Promise.resolve(result);
+    };
+    ConversionService.prototype.editAuxData = function () {
+        var result = {};
+        result = {
+            Name: this.auxData.Name,
+            CreatedDate: this.auxData.CreatedDate,
+            CreatedBy: this.auxData.CreatedBy,
+            AllowedTenantIds: this.auxData.AllowedTenantIds,
+            IsActive: true,
+            OldVersionIds: []
+        };
+        this.auxData = result;
+        return Promise.resolve();
+    };
+    ConversionService.prototype.convertToString = function (data) {
+        var newString;
+        newString = JSON.stringify(data);
+        this.template = newString;
+        return Promise.resolve();
+    };
+    ConversionService.prototype.changeDetailsToSettings = function (data) {
+        var settings = {};
+        settings = {
+            displaySteps: false,
+            create: {
+                save: data.details.lock,
+                cancel: data.details.cancel,
+                submit: data.details.submit,
+                success: data.details.success,
+                error: data.details.error,
+                submitSuccess: data.details.submitSuccess,
+                submitError: data.details.submitError
+            },
+            manage: {
+                save: 'Save',
+                cancel: 'Cancel',
+                submit: 'Submit',
+                success: 'Thank you. Your form has been saved.',
+                error: 'Sorry, we could not save your form.',
+                submitSuccess: 'Thank you. Your form has been submitted.',
+                submitError: 'Sorry, we could not submit your form.'
+            },
+            canSubmit: data.details.canLock,
+            sameMessages: true,
+            sameButtons: true
+        };
+        data.settings = settings;
+        delete data.details;
+        return Promise.resolve(data);
+    };
+    ConversionService.prototype.getTypeTemplate = function (obj) {
+        var newObj = {
+            data: {
+                format: 'element'
+            },
+            key: obj.guid,
+            className: 'formly-builder-element col-xs-12 col-sm-12',
+            templateOptions: {
+                label: obj.label || '',
+                required: obj.required || false,
+                valueProp: 'name',
+                placeholder: obj.placeholder || '',
+                options: []
+            }
+        };
+        if (obj.sizeX === 1) {
+            if (obj.col === 0) {
+                newObj.data.align = 'left';
+                newObj.className = 'formly-builder-element col-xs-6 clear';
+            }
+            else if (obj.col === 1) {
+                newObj.data.align = 'right';
+                newObj.className = 'formly-builder-element col-xs-6 pull-right';
+            }
+        }
+        return newObj;
+    };
     ConversionService.prototype.defaultType = function (obj) {
-        // TODO - Check if setting certain properties to a falsey value
-        // is OK or should the properties not exist?
-        var newObj = {};
-        newObj.type = obj.type || 'input';
-        newObj.data = {
-            format: 'element'
-        };
-        newObj.templateOptions = {
-            label: obj.label || '',
-            options: obj.options || [],
-            required: obj.required || false,
-            valueProp: 'name'
-        };
-        newObj.key = obj.guid;
-        newObj.defaultValue = obj.value || ''; // TODO - Check
-        newObj.className = 'formly-builder-element col-xs-12 col-sm-12'; // TODO
+        var newObj = this.getTypeTemplate(obj);
+        newObj.type = obj.type === 'text' ? 'input' : obj.type;
+        if (obj.type === 'datepicker') {
+            newObj.defaultValue = obj.value || null;
+        }
+        else if (obj.type === 'timepicker') {
+            if (obj.value) {
+                newObj.defaultValue = obj.value;
+            }
+        }
+        else if (obj.type !== 'hr') {
+            newObj.defaultValue = obj.value || '';
+        }
         return newObj;
     };
     ConversionService.prototype.selectType = function (obj) {
-        // TODO - Check if setting certain properties to a falsey value
-        // is OK or should the properties not exist?
-        var newObj = {};
+        var newObj = this.getTypeTemplate(obj);
         newObj.type = 'tlrSelect';
-        newObj.data = {
-            format: 'element',
-            prompt: 'Select' // TODO - Check
-        };
-        newObj.templateOptions = {
-            label: obj.label || '',
-            required: obj.required || false,
-            valueProp: 'name',
-            options: []
-        };
-        newObj.key = obj.guid;
-        newObj.defaultValue = obj.value || ''; // TODO - Check
-        newObj.className = 'formly-builder-element col-xs-12 col-sm-12'; // TODO
+        newObj.data.prompt = obj.prompt;
+        if (obj.value && obj.value !== 'null') {
+            newObj.defaultValue = obj.options[parseInt(obj.value, 10) - 1].option;
+        }
+        else {
+            newObj.defaultValue = null;
+        }
         obj.options.forEach(function (item) {
             var option = {
                 name: item.option
@@ -79,30 +159,39 @@ var ConversionService = (function () {
         return newObj;
     };
     ConversionService.prototype.radioType = function (obj) {
-        // TODO - Check if setting certain properties to a falsey value
-        // is OK or should the properties not exist?
-        var newObj = {};
-        newObj.type = 'tlrSelect';
-        newObj.data = {
-            format: 'element',
-            prompt: 'Select' // TODO - Check
-        };
-        newObj.templateOptions = {
-            label: obj.label || '',
-            required: obj.required || false,
-            valueProp: 'name',
-            options: []
-        };
-        newObj.key = obj.guid;
-        newObj.defaultValue = obj.value || ''; // TODO - Check
-        newObj.className = 'formly-builder-element col-xs-12 col-sm-12'; // TODO
-        obj.options.forEach(function (item) {
+        var newObj = this.getTypeTemplate(obj);
+        newObj.type = 'radio';
+        newObj.defaultValue = obj.value.toString();
+        obj.options.forEach(function (item, index) {
             var option = {
                 name: item.option,
-                value: item.option.toString()
+                value: (index + 1).toString()
             };
             newObj.templateOptions.options.push(option);
         });
+        return newObj;
+    };
+    ConversionService.prototype.checkboxType = function (obj) {
+        var newObj = this.getTypeTemplate(obj);
+        newObj.type = obj.displayLabel && obj.displayLabel === true ? 'tlrMultiCheckbox' : 'checkbox';
+        if (newObj.type === 'tlrMultiCheckbox') {
+            newObj.defaultValue = [];
+            obj.options.forEach(function (item) {
+                var option = {
+                    name: item.label,
+                };
+                var values = [];
+                newObj.templateOptions.options.push(option);
+                if (item.value && item.value === true) {
+                    newObj.defaultValue.push(item.label);
+                }
+            });
+        }
+        else {
+            if (obj.options[0].value) {
+                newObj.defaultValue = obj.options[0].value;
+            }
+        }
         return newObj;
     };
     ConversionService.prototype.toFormlyType = function (obj) {
@@ -130,7 +219,7 @@ var ConversionService = (function () {
                 newObj = this.defaultType(obj);
                 break;
             case 'checkbox':
-                // TODO
+                newObj = this.checkboxType(obj);
                 break;
             case 'select':
                 newObj = this.selectType(obj);
@@ -142,11 +231,16 @@ var ConversionService = (function () {
         }
         return newObj;
     };
-    ConversionService.prototype.convertToFormly = function (data) {
+    ConversionService.prototype.convertFieldsToFormly = function (data) {
         var _this = this;
         var newFields = [];
         var newFieldsWrapper = [{
-                fieldGroup: []
+                fieldGroup: [],
+                data: {
+                    format: 'step',
+                    label: 'Step'
+                },
+                className: 'formly-builder-step row'
             }];
         if (!data.fields) {
             Promise.reject();
@@ -157,7 +251,20 @@ var ConversionService = (function () {
         data.fields = newFieldsWrapper;
         return Promise.resolve(data);
     };
-    ConversionService.prototype.sortFields = function (data) {
+    ConversionService.prototype.sortFieldCols = function (data) {
+        if (!data.fields) {
+            Promise.reject();
+        }
+        data.fields.sort(function (a, b) {
+            if (a.col < b.col)
+                return -1;
+            if (a.col > b.col)
+                return 1;
+            return 0;
+        });
+        return Promise.resolve(data);
+    };
+    ConversionService.prototype.sortFieldRows = function (data) {
         if (!data.fields) {
             Promise.reject();
         }
