@@ -1,6 +1,5 @@
-import {Injectable} from 'angular2/angular2';
+import {Injectable, provide} from 'angular2/angular2';
 
-@Injectable()
 export class ConversionService {
 
 	private template:Object;
@@ -13,18 +12,16 @@ export class ConversionService {
 				return this.setTemplate(data).then(data => {
 					return this.changeQuotes(data).then(data => {
 						return this.convertToJson(data).then(data => {
-							return this.sortFieldCols(data).then(data => {
-								return this.sortFieldRows(data).then(data => {
-									return this.convertFieldsToFormly(data).then(data => {
-										return this.changeDetailsToSettings(data).then(data => {
-											return this.convertToString(data).then(data => {
-												return this.editAuxData().then(() => {
-													return this.returnResult().then((data) => {
-														return Promise.resolve(data);
-													});
+							return this.sortFields(data).then(data => {
+								return this.convertFieldsToFormly(data).then(data => {
+									return this.changeDetailsToSettings(data).then(data => {
+										return this.convertToString(data).then(data => {
+											return this.editAuxData().then(() => {
+												return this.returnResult().then((data) => {
+													return Promise.resolve(data);
 												});
-											})
-										});
+											});
+										})
 									});
 								});
 							});
@@ -38,6 +35,7 @@ export class ConversionService {
 	
 	private returnResult (): Promise<data> {
 		let result:Object = {};
+		
 		result = this.auxData;
 		result.Template = this.template;
 		return Promise.resolve(result); 
@@ -265,27 +263,11 @@ export class ConversionService {
 		return Promise.resolve(data);
 	}
 	
-	private sortFieldCols (data): Promise<data> {
+	private sortFields (data): Promise<data> {
 		if (!data.fields) {
 			Promise.reject();	
 		}
-		data.fields.sort((a, b) => {
-			if (a.col < b.col) return -1;
-			if (a.col > b.col) return 1;
-			return 0;
-		});
-		return Promise.resolve(data);
-	}
-
-	private sortFieldRows (data): Promise<data> {
-		if (!data.fields) {
-			Promise.reject();	
-		}
-		data.fields.sort((a, b) => {
-			if (a.row < b.row) return -1;
-			if (a.row > b.row) return 1;
-			return 0;
-		});
+		data.fields.sort(this.fieldSorter(['row', 'col']));
 		return Promise.resolve(data);
 	}
 
@@ -316,6 +298,29 @@ export class ConversionService {
 		let reg:Object = new RegExp('\\\\"','g');
 		let result:string = data.replace(reg,'\'');
 		return Promise.resolve(result);
+	}
+	
+	/*
+	From chriskelly's answer here:
+	http://stackoverflow.com/questions/6913512/how-to-sort-an-array-of-objects-by-multiple-fields
+	*/
+	private fieldSorter (fields) {
+		return function (a, b) {
+			return fields
+				.map(function (o) {
+					var dir = 1;
+					if (o[0] === '-') {
+					dir = -1;
+					o=o.substring(1);
+					}
+					if (a[o] > b[o]) return dir;
+					if (a[o] < b[o]) return -(dir);
+					return 0;
+				})
+				.reduce(function firstNonZeroValue (p,n) {
+					return p ? p : n;
+				}, 0);
+		};
 	}
 	
 }

@@ -1,15 +1,3 @@
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") return Reflect.decorate(decorators, target, key, desc);
-    switch (arguments.length) {
-        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);
-        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);
-        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);
-    }
-};
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
-var angular2_1 = require('angular2/angular2');
 var ConversionService = (function () {
     function ConversionService() {
     }
@@ -20,15 +8,13 @@ var ConversionService = (function () {
                 return _this.setTemplate(data).then(function (data) {
                     return _this.changeQuotes(data).then(function (data) {
                         return _this.convertToJson(data).then(function (data) {
-                            return _this.sortFieldCols(data).then(function (data) {
-                                return _this.sortFieldRows(data).then(function (data) {
-                                    return _this.convertFieldsToFormly(data).then(function (data) {
-                                        return _this.changeDetailsToSettings(data).then(function (data) {
-                                            return _this.convertToString(data).then(function (data) {
-                                                return _this.editAuxData().then(function () {
-                                                    return _this.returnResult().then(function (data) {
-                                                        return Promise.resolve(data);
-                                                    });
+                            return _this.sortFields(data).then(function (data) {
+                                return _this.convertFieldsToFormly(data).then(function (data) {
+                                    return _this.changeDetailsToSettings(data).then(function (data) {
+                                        return _this.convertToString(data).then(function (data) {
+                                            return _this.editAuxData().then(function () {
+                                                return _this.returnResult().then(function (data) {
+                                                    return Promise.resolve(data);
                                                 });
                                             });
                                         });
@@ -251,30 +237,11 @@ var ConversionService = (function () {
         data.fields = newFieldsWrapper;
         return Promise.resolve(data);
     };
-    ConversionService.prototype.sortFieldCols = function (data) {
+    ConversionService.prototype.sortFields = function (data) {
         if (!data.fields) {
             Promise.reject();
         }
-        data.fields.sort(function (a, b) {
-            if (a.col < b.col)
-                return -1;
-            if (a.col > b.col)
-                return 1;
-            return 0;
-        });
-        return Promise.resolve(data);
-    };
-    ConversionService.prototype.sortFieldRows = function (data) {
-        if (!data.fields) {
-            Promise.reject();
-        }
-        data.fields.sort(function (a, b) {
-            if (a.row < b.row)
-                return -1;
-            if (a.row > b.row)
-                return 1;
-            return 0;
-        });
+        data.fields.sort(this.fieldSorter(['row', 'col']));
         return Promise.resolve(data);
     };
     ConversionService.prototype.setTemplate = function (data) {
@@ -303,10 +270,30 @@ var ConversionService = (function () {
         var result = data.replace(reg, '\'');
         return Promise.resolve(result);
     };
-    ConversionService = __decorate([
-        angular2_1.Injectable(), 
-        __metadata('design:paramtypes', [])
-    ], ConversionService);
+    /*
+    From chriskelly's answer here:
+    http://stackoverflow.com/questions/6913512/how-to-sort-an-array-of-objects-by-multiple-fields
+    */
+    ConversionService.prototype.fieldSorter = function (fields) {
+        return function (a, b) {
+            return fields
+                .map(function (o) {
+                var dir = 1;
+                if (o[0] === '-') {
+                    dir = -1;
+                    o = o.substring(1);
+                }
+                if (a[o] > b[o])
+                    return dir;
+                if (a[o] < b[o])
+                    return -(dir);
+                return 0;
+            })
+                .reduce(function firstNonZeroValue(p, n) {
+                return p ? p : n;
+            }, 0);
+        };
+    };
     return ConversionService;
 })();
 exports.ConversionService = ConversionService;

@@ -1,6 +1,7 @@
 import {Component, FORM_DIRECTIVES, CORE_DIRECTIVES, JsonPipe} from 'angular2/angular2';
 import {ConversionService} from './conversion.service';
 import {LoaderComponent} from './loader.component';
+import {SortService} from './sort.service';
 
 @Component({
 	selector:	'form-migrator',
@@ -9,7 +10,7 @@ import {LoaderComponent} from './loader.component';
 				textarea { height: 400px; }
 			`],	
 	directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, LoaderComponent],
-	providers: [ConversionService],
+	providers: [ConversionService, SortService],
 	pipes: [JsonPipe]
 })
 export class FormMigratorComponent {
@@ -34,7 +35,7 @@ export class FormMigratorComponent {
 			this.converting = false;
 			this.form.newData = newData;
 			this.form.oldData = '';
-		}, 2000);
+		}, 1500);
 	}
 	
 	private conversionError () {
