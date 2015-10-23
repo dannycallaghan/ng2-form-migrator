@@ -6,7 +6,7 @@
 		<ol>
 			<li>Copy and paste the <strong>old</strong> form JSON into Box 1.</li>
 			<li>Hit 'Convert'.</li>
-			<li>Copy the output from Box 2.</li>
+			<li>Copy the <strong>new</strong> form JSON from Box 2.</li>
 		</ol>
 	</div>
 	<div *ng-if="error" class="alert alert-danger">
@@ -23,7 +23,7 @@
 			</div>
 			<div class="col-xs-12 col-sm-5">
 				<!-- <pre>{{form.newData | json}}</pre> -->
-				<textarea [(ng-model)]="form.newData" class="form-control" placeholder="Box 1"></textarea>
+				<textarea [(ng-model)]="form.newData" class="form-control" placeholder="Box 2"></textarea>
 			</div>
 		</ng-form>
 	</div>
