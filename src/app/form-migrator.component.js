@@ -12,7 +12,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var angular2_1 = require('angular2/angular2');
 var conversion_service_1 = require('./conversion.service');
 var loader_component_1 = require('./loader.component');
-var sort_service_1 = require('./sort.service');
 var FormMigratorComponent = (function () {
     function FormMigratorComponent(conversionService) {
         this.conversionService = conversionService;
@@ -53,7 +52,7 @@ var FormMigratorComponent = (function () {
             templateUrl: 'app/form-migrator.component.html',
             styles: ["\n\t\t\t\ttextarea { height: 400px; }\n\t\t\t"],
             directives: [angular2_1.FORM_DIRECTIVES, angular2_1.CORE_DIRECTIVES, loader_component_1.LoaderComponent],
-            providers: [conversion_service_1.ConversionService, sort_service_1.SortService],
+            providers: [conversion_service_1.ConversionService],
             pipes: [angular2_1.JsonPipe]
         }), 
         __metadata('design:paramtypes', [conversion_service_1.ConversionService])

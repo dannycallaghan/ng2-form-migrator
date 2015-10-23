@@ -1,7 +1,6 @@
 import {Component, FORM_DIRECTIVES, CORE_DIRECTIVES, JsonPipe} from 'angular2/angular2';
 import {ConversionService} from './conversion.service';
 import {LoaderComponent} from './loader.component';
-import {SortService} from './sort.service';
 
 @Component({
 	selector:	'form-migrator',
@@ -10,7 +9,7 @@ import {SortService} from './sort.service';
 				textarea { height: 400px; }
 			`],	
 	directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, LoaderComponent],
-	providers: [ConversionService, SortService],
+	providers: [ConversionService],
 	pipes: [JsonPipe]
 })
 export class FormMigratorComponent {
