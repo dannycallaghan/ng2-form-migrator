@@ -263,7 +263,8 @@ var ConversionService = (function () {
     };
     ConversionService.prototype.changeQuotes = function (data) {
         var result = data.replace(/'/g, '"');
-        return Promise.resolve(result);
+        var final = result.replace(/([A-z])(")([A-z])/g, '$1\'$3');
+        return Promise.resolve(final);
     };
     ConversionService.prototype.stripSlashes = function (data) {
         var reg = new RegExp('\\\\"', 'g');

@@ -11,6 +11,8 @@ export class ConversionService {
 			return this.convertToJson(data).then(data => {
 				return this.setTemplate(data).then(data => {
 					return this.changeQuotes(data).then(data => {
+						
+						
 						return this.convertToJson(data).then(data => {
 							return this.sortFields(data).then(data => {
 								return this.convertFieldsToFormly(data).then(data => {
@@ -18,14 +20,18 @@ export class ConversionService {
 										return this.convertToString(data).then(data => {
 											return this.editAuxData().then(() => {
 												return this.returnResult().then((data) => {
+													
 													return Promise.resolve(data);
+													
 												});
 											});
 										})
 									});
 								});
 							});
+							
 						});
+						
 					});
 				});
 			});
@@ -35,7 +41,6 @@ export class ConversionService {
 	
 	private returnResult (): Promise<data> {
 		let result:Object = {};
-		
 		result = this.auxData;
 		result.Template = this.template;
 		return Promise.resolve(result); 
@@ -290,8 +295,9 @@ export class ConversionService {
 	}
 
 	private changeQuotes (data): Promise<data> {
-		let result:string = data.replace(/'/g, '"');
-		return Promise.resolve(result);
+		const result:string = data.replace(/'/g, '"');
+		const final:string = result.replace(/([A-z])(")([A-z])/g,'$1\'$3');
+		return Promise.resolve(final);
 	}
 	
 	private stripSlashes (data): Promise<data> {
